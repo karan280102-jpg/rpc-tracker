@@ -159,6 +159,7 @@ td.item .flag.info { color: #8fbcf0; border-color: rgba(106,167,232,.5); }
 .foot b { color: var(--text); }
 .empty { padding: 28px; text-align: center; color: var(--muted); }
 @media (max-width: 860px) { .hs { display: none; } }
+@media (max-width: 1400px) { #itemTable th > button, #itemTable th > span { padding-left: 5px; padding-right: 5px; letter-spacing: .06em; } #itemTable td { padding-left: 5px; padding-right: 5px; } #itemTable td.item { min-width: 12rem; } }
 
 /* drawer */
 .scrim { position: fixed; inset: 0; background: rgba(2,6,5,.6); backdrop-filter: blur(2px); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 40; }
@@ -327,7 +328,7 @@ td.item .flag.info { color: #8fbcf0; border-color: rgba(106,167,232,.5); }
   <section class="sec" id="groups">
     <div class="sec-h">
       <div><div class="idx">01 · Summary</div><h2>By item group</h2></div>
-      <div class="inline-sort"><span>Click a group to filter items</span><label for="gSort" class="sr">Sort groups</label><select id="gSort" aria-label="Sort groups">
+      <div class="inline-sort"><span>All quantities in kg · Click a group to filter items</span><label for="gSort" class="sr">Sort groups</label><select id="gSort" aria-label="Sort groups">
         <option value="sent:-1">Sent to RPC · high → low</option>
         <option value="sent:1">Sent to RPC · low → high</option>
         <option value="pct:-1">Fulfilled vs projection · high → low</option>
@@ -340,8 +341,8 @@ td.item .flag.info { color: #8fbcf0; border-color: rgba(106,167,232,.5); }
       <table>
         <thead><tr>
           <th><span>Item group</span></th>
-          <th class="n"><span>Projection (kg)</span></th><th class="n"><span>Pendency (kg)</span></th><th class="n"><span>Sent to RPC (kg)</span></th>
-          <th class="n"><span>Fulfilled vs projection</span></th><th class="n"><span>Fulfilled vs pendency</span></th><th class="n hs"><span>Avg rate (₹/kg)</span></th><th class="n hs"><span>Value (₹)</span></th>
+          <th class="n"><span>Projection</span></th><th class="n"><span>Pendency</span></th><th class="n"><span>Sent to RPC</span></th>
+          <th class="n"><span>Fulfilled vs projection</span></th><th class="n"><span>Fulfilled vs pendency</span></th><th class="n hs"><span>Avg rate (₹)</span></th><th class="n hs"><span>Value (₹)</span></th>
         </tr></thead>
         <tbody id="gBody"></tbody>
       </table>
@@ -351,7 +352,7 @@ td.item .flag.info { color: #8fbcf0; border-color: rgba(106,167,232,.5); }
   <section class="sec" id="items">
     <div class="sec-h">
       <div><div class="idx">02 · Item-wise</div><h2>Pending by item</h2></div>
-      <p>Sent = receipts into RPC raw material stores this month · Rate = weighted average · In-hand usable = in-hand − non-usable · Click an item for details</p>
+      <p>All quantities in kg · Sent = receipts into RPC raw material stores this month · Rate = weighted average · In-hand usable = in-hand − non-usable · Click an item for details</p>
     </div>
     <div class="tools" id="itemTools">
       <div class="tf"><label for="fSearch">Search item</label><input id="fSearch" type="search" placeholder="Chia, cashew, khalas…" autocomplete="off"></div>
@@ -381,19 +382,19 @@ td.item .flag.info { color: #8fbcf0; border-color: rgba(106,167,232,.5); }
         <table id="itemTable">
           <thead><tr>
             <th data-sort="item"><button type="button">Item</button></th>
-            <th class="n" data-sort="req"><button type="button">Projection (kg)</button></th>
-            <th class="n" data-sort="pendency"><button type="button">Pendency (kg)</button></th>
-            <th class="n hs" data-sort="inhand"><button type="button" title="Current in-hand minus non-usable">In-hand usable (kg)</button></th>
-            <th class="n hs" data-sort="nonuse"><button type="button">Non-usable (kg)</button></th>
-            <th class="n" data-sort="sent"><button type="button">Sent to RPC (kg)</button></th>
-            <th class="n" data-sort="pending"><button type="button">Pending vs projection (kg)</button></th>
+            <th class="n" data-sort="req"><button type="button">Projection</button></th>
+            <th class="n" data-sort="pendency"><button type="button">Pendency</button></th>
+            <th class="n hs" data-sort="inhand"><button type="button" title="Current in-hand minus non-usable">In-hand usable</button></th>
+            <th class="n hs" data-sort="nonuse"><button type="button">Non-usable</button></th>
+            <th class="n" data-sort="sent"><button type="button">Sent to RPC</button></th>
+            <th class="n" data-sort="pending"><button type="button">Pending vs projection</button></th>
             <th class="n" data-sort="pct"><button type="button">Fulfilled vs projection</button></th>
             <th class="n" data-sort="pctPend"><button type="button">Fulfilled vs pendency</button></th>
-            <th class="n" data-sort="rate"><button type="button">Avg rate (₹/kg)</button></th>
+            <th class="n" data-sort="rate"><button type="button">Avg rate (₹)</button></th>
             <th class="n hs" data-sort="value"><button type="button">Value (₹)</button></th>
             <th class="n hs" data-sort="n"><button type="button">Receipts</button></th>
             <th data-sort="status"><button type="button">Status</button></th>
-            <th class="n hs" data-sort="excess"><button type="button">Excess (kg)</button></th>
+            <th class="n hs" data-sort="excess"><button type="button">Excess</button></th>
           </tr></thead>
           <tbody id="iBody"></tbody>
         </table>
@@ -423,16 +424,16 @@ td.item .flag.info { color: #8fbcf0; border-color: rgba(106,167,232,.5); }
     <div class="why-box hidden" id="dWhy"></div>
     <div id="dWhWrap"><div class="sub-h">Warehouse-wise</div>
     <div class="card" style="margin:0 22px;"><table><thead><tr>
-      <th><span>Warehouse</span></th><th class="n"><span>Receipts</span></th><th class="n"><span>Qty (kg)</span></th><th class="n"><span>Avg rate (₹/kg)</span></th><th class="n"><span>Value (₹)</span></th>
+      <th><span>Warehouse</span></th><th class="n"><span>Receipts</span></th><th class="n"><span>Qty</span></th><th class="n"><span>Avg rate (₹)</span></th><th class="n"><span>Value (₹)</span></th>
     </tr></thead><tbody id="dWh"></tbody></table></div></div>
     <div id="dDetail">
     <div class="sub-h">Vendor-wise</div>
     <div class="card" style="margin:0 22px;"><table><thead><tr>
-      <th><span>Vendor</span></th><th class="n"><span>Receipts</span></th><th class="n"><span>Qty (kg)</span></th><th class="n"><span>Avg rate (₹/kg)</span></th><th class="n"><span>Value (₹)</span></th>
+      <th><span>Vendor</span></th><th class="n"><span>Receipts</span></th><th class="n"><span>Qty</span></th><th class="n"><span>Avg rate (₹)</span></th><th class="n"><span>Value (₹)</span></th>
     </tr></thead><tbody id="dVend"></tbody></table></div>
     <div class="sub-h">Every receipt</div>
     <div class="card" style="margin:0 22px;"><table><thead><tr>
-      <th><span>Date</span></th><th><span>Voucher #</span></th><th class="hs"><span>Type</span></th><th><span>Vendor</span></th><th class="hs"><span>Batch</span></th><th><span>Warehouse</span></th><th class="n"><span>Qty (kg)</span></th><th class="n"><span>Rate (₹/kg)</span></th>
+      <th><span>Date</span></th><th><span>Voucher #</span></th><th class="hs"><span>Type</span></th><th><span>Vendor</span></th><th class="hs"><span>Batch</span></th><th><span>Warehouse</span></th><th class="n"><span>Qty</span></th><th class="n"><span>Rate (₹)</span></th>
     </tr></thead><tbody id="dRcpt"></tbody></table></div>
     </div>
   </div>
