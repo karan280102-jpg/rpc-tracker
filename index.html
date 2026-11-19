@@ -1222,6 +1222,25 @@ td.item .flag.info { color: #8fbcf0; border-color: rgba(106,167,232,.5); }
 
   const SHEETS = { rpc: 'RPC Raw Material', proj: 'Projection Qty', nonuse: 'Non-Usable Data' };
   const sheetId = s => { const m = String(s || '').match(/\/d\/([a-zA-Z0-9_-]{20,})/) || String(s || '').match(/^([a-zA-Z0-9_-]{30,})$/); return m ? m[1] : ''; };
+  // Google's quick CSV link blanks dates when the Date column mixes formats.
+  // Fill those from the copy the GitHub job saved from the full Excel export.
+  async function fillMissingDates(tx) {
+    try {
+      const aoa = tx2aoa(tx); const h = (aoa[0] || []).map(x => String(x).trim().toLowerCase());
+      const di = h.indexOf('date'); if (di < 0 || !aoa.slice(1).some(r => r[di] === '' && r.some(Boolean))) return tx;
+      const r = await fetch('data/' + encodeURIComponent(SHEETS.rpc) + '.csv?t=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) return tx;
+      const cp = tx2aoa(await r.text()); const ch = (cp[0] || []).map(x => String(x).trim().toLowerCase());
+      const cols = ['voucher #', 'item name', 'in qty', 'out qty', 'warehouse', 'batch'];
+      const key = (row, hh) => cols.map(c => { const i = hh.indexOf(c); let v = i < 0 ? '' : String(row[i] ?? '').trim(); if (/qty/.test(c)) v = String(parseFloat(v.replace(/,/g, '')) || 0); return v.toLowerCase(); }).join('|');
+      const cdi = ch.indexOf('date'); if (cdi < 0) return tx;
+      const map = new Map(); cp.slice(1).forEach(row => { if (row[cdi]) map.set(key(row, ch), row[cdi]); });
+      let n = 0; aoa.slice(1).forEach(row => { if (row[di] === '' && row.some(Boolean)) { const d = map.get(key(row, h)); if (d) { row[di] = d; n++; } } });
+      return n ? XLSX.utils.sheet_to_csv(XLSX.utils.aoa_to_sheet(aoa)) : tx;
+    } catch (_) { return tx; }
+  }
+  function tx2aoa(tx) { const w = XLSX.read(tx, { type: 'string', raw: true }); return XLSX.utils.sheet_to_json(w.Sheets[w.SheetNames[0]], { header: 1, raw: false, defval: '' }); }
+
   async function readSheet() {
     if (typeof XLSX === 'undefined') throw new Error('the Excel reader did not load (check internet)');
     const url = n => `https://docs.google.com/spreadsheets/d/${S.sheet.id}/gviz/tq?tqx=out:csv&headers=1&sheet=${encodeURIComponent(n)}&t=${Date.now()}`;
@@ -1239,6 +1258,7 @@ td.item .flag.info { color: #8fbcf0; border-color: rgba(106,167,232,.5); }
       } catch (_) { throw direct; }
     }
     const head = tx => tx.split(/\r?\n/, 1)[0] || '';
+    if (!via && location.protocol !== 'file:') a = await fillMissingDates(a);
     if (!/in qty/i.test(head(a))) throw new Error('sheet “' + SHEETS.rpc + '” not found or its columns changed');
     if (!/req/i.test(head(b)) || /in qty/i.test(head(b))) throw new Error('sheet “' + SHEETS.proj + '” not found or its columns changed');
     const wb = XLSX.utils.book_new();
