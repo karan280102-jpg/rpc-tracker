@@ -467,7 +467,7 @@ td.item .flag.info { color: #8fbcf0; border-color: rgba(106,167,232,.5); }
       <div class="f2"><label for="aSheet">Live data · Google Sheet link</label><input id="aSheet" type="text" placeholder="https://docs.google.com/spreadsheets/d/…" autocomplete="off"></div>
     </div>
     <div class="mrow" style="justify-content:flex-start"><button class="btn gold" id="aSheetSave" type="button">Use this sheet</button><span class="msg" id="aSheetMsg" hidden></span></div>
-    <p style="font-size:12.5px">The dashboard reads the sheets “RPC Raw Material”, “Projection Qty” and “Non-Usable Data” every time it opens and every 2 minutes. The sheet must be shared as <b>Anyone with the link · Viewer</b>.</p>
+    <p style="font-size:12.5px">The dashboard reads the sheets “RPC Raw Material”, “Projection Qty” and “Non-Usable Data” every time it opens and when you click Refresh. The sheet must be shared as <b>Anyone with the link · Viewer</b>.</p>
     <details class="adv"><summary>Optional: publish uploads through a GitHub Gist instead</summary>
     <p>Only the person who updates the data needs this. The numbers are published to a private GitHub Gist, and every copy of this file reads from it, so your team always sees the latest data without you sending the file again.</p>
     <div class="prev" id="aStatus"></div>
@@ -656,7 +656,7 @@ td.item .flag.info { color: #8fbcf0; border-color: rgba(106,167,232,.5); }
   }
   function footInfo() {
     const n = $('#footInfo');
-    n.textContent = (S.sheet.id ? 'Live source: Google Sheet “Pendency Data” · refreshes on open and every 2 minutes' : S.cfg.id ? 'Live source: private GitHub Gist · refreshes every 2 minutes' : 'Not connected to live data yet') + (S.builtAt ? ' · file built ' + tm(S.builtAt) : '');
+    n.textContent = (S.sheet.id ? 'Live source: Google Sheet “Pendency Data” · updates when opened or when you click Refresh' : S.cfg.id ? 'Live source: private GitHub Gist · updates when opened or when you click Refresh' : 'Not connected to live data yet') + (S.builtAt ? ' · file built ' + tm(S.builtAt) : '');
   }
 
   const counters = new WeakMap();
@@ -1404,8 +1404,6 @@ td.item .flag.info { color: #8fbcf0; border-color: rgba(106,167,232,.5); }
   render(); showLocalNote();
   requestAnimationFrame(finishLoader);
   sync(false);
-  setInterval(() => { if (document.visibilityState === 'visible') sync(false); }, S.sheet.id ? 120000 : 120000);
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && S.syncedAt && Date.now() - S.syncedAt > 60000) sync(false); });
 })();
 </script>
 </body>
