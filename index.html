@@ -7,7 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="xlsx.full.min.js"></script>
+<script>window.XLSX || document.write('<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"><\/script>')</script>
 <style>
 /* Midnight Emerald & Gold — single dark world. Layout: header → filters → KPI band → group table → item table; detail opens as a side drawer. */
 :root {
@@ -646,10 +647,11 @@ td.item .flag.info { color: #8fbcf0; border-color: rgba(106,167,232,.5); }
     t.textContent = isLocal ? 'PREVIEW' : !connected ? 'BUILT-IN DATA' : S.live ? 'LIVE' : S.loading ? 'SYNCING' : 'OFFLINE';
     if (!doc) { f.textContent = 'No data yet. Use Admin → Update data to publish the first month.'; return; }
     const parts = [el('span', null, 'Ledger as of '), el('b', null, fmt.date(doc.asOf))];
-    if (doc.liveSheet) parts.push(el('span', null, ' · live from Google Sheet'));
+    if (doc.liveSheet && doc.viaCopy) parts.push(el('span', null, ' · from Google Sheet (copied ' + (doc.viaCopy === 'unknown' ? 'recently' : tm(doc.viaCopy)) + ')'));
+    else if (doc.liveSheet) parts.push(el('span', null, ' · live from Google Sheet'));
     else if (doc.updatedAt) parts.push(el('span', null, ' · published ' + tm(doc.updatedAt) + (doc.updatedByName ? ' by ' + doc.updatedByName : '')));
     if (live && S.syncedAt) parts.push(el('span', null, ' · checked ' + new Date(S.syncedAt).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })));
-    if (connected && !S.live && !S.loading && !isLocal) parts.push(el('span', null, ' · could not reach live data, showing the copy saved in this file'));
+    if (connected && !S.live && !S.loading && !isLocal) parts.push(el('span', null, ' · could not reach live data (' + (S.syncErr || 'no connection') + '), showing the copy saved in this file. Use the web link for live data.'));
     f.replaceChildren(...parts);
   }
   function footInfo() {
@@ -1225,7 +1227,17 @@ td.item .flag.info { color: #8fbcf0; border-color: rgba(106,167,232,.5); }
     const url = n => `https://docs.google.com/spreadsheets/d/${S.sheet.id}/gviz/tq?tqx=out:csv&headers=1&sheet=${encodeURIComponent(n)}&t=${Date.now()}`;
     const get = async n => { let r; try { r = await fetch(url(n), { cache: 'no-store' }); } catch (_) { throw new Error('could not reach the Google Sheet. Check it is shared as “Anyone with the link · Viewer” and that you are online'); }
       if (!r.ok) throw new Error('Google Sheets answered ' + r.status); const tx = await r.text(); if (/^\s*<|google\.visualization/i.test(tx)) throw new Error('the Google Sheet is not shared for viewing'); return tx; };
-    const [a, b, c] = await Promise.all([get(SHEETS.rpc), get(SHEETS.proj), get(SHEETS.nonuse).catch(() => '')]);
+    let a, b, c, via = null;
+    try { [a, b, c] = await Promise.all([get(SHEETS.rpc), get(SHEETS.proj), get(SHEETS.nonuse).catch(() => '')]); }
+    catch (direct) {
+      if (location.protocol === 'file:') throw direct;
+      const local = async n => { const r = await fetch('data/' + encodeURIComponent(n) + '.csv?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) throw new Error('no copy'); return r.text(); };
+      try {
+        [a, b, c] = await Promise.all([local(SHEETS.rpc), local(SHEETS.proj), local(SHEETS.nonuse).catch(() => '')]);
+        const m = await fetch('data/meta.json?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.json() : {}).catch(() => ({}));
+        via = m.copiedAt || 'unknown';
+      } catch (_) { throw direct; }
+    }
     const head = tx => tx.split(/\r?\n/, 1)[0] || '';
     if (!/in qty/i.test(head(a))) throw new Error('sheet “' + SHEETS.rpc + '” not found or its columns changed');
     if (!/req/i.test(head(b)) || /in qty/i.test(head(b))) throw new Error('sheet “' + SHEETS.proj + '” not found or its columns changed');
@@ -1236,7 +1248,7 @@ td.item .flag.info { color: #8fbcf0; border-color: rgba(106,167,232,.5); }
     const P = parseWorkbook(wb, 'Google Sheet');
     if (!P.key) throw new Error('could not work out the projection month');
     const doc = assemble(P, P.key);
-    doc.liveSheet = true; doc.source = 'Google Sheet';
+    doc.liveSheet = true; doc.source = 'Google Sheet'; doc.viaCopy = via;
     return doc;
   }
   const sig = d => [d.asOf, d.receipts.length, d.projection.length, Math.round(d.receipts.reduce((a, r) => a + r[2], 0)), Math.round(d.projection.reduce((a, p) => a + (+p[2] || 0) + (+p[9] || 0) + (+p[3] || 0), 0))].join('|');
