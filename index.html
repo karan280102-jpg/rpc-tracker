@@ -343,7 +343,7 @@ td.item .flag.info { color: #8fbcf0; border-color: rgba(106,167,232,.5); }
         <thead><tr>
           <th><span>Item group</span></th>
           <th class="n"><span>Projection</span></th><th class="n"><span>Pendency</span></th><th class="n"><span>Sent to RPC</span></th>
-          <th class="n"><span>Fulfilled vs projection</span></th><th class="n"><span>Fulfilled vs pendency</span></th><th class="n hs"><span>Avg rate (₹)</span></th><th class="n hs"><span>Value (₹)</span></th>
+          <th class="n"><span>Fulfilled vs projection</span></th><th class="n"><span>Fulfilled vs pendency</span></th>
         </tr></thead>
         <tbody id="gBody"></tbody>
       </table>
@@ -720,7 +720,7 @@ td.item .flag.info { color: #8fbcf0; border-color: rgba(106,167,232,.5); }
   }
   function renderGroups(all) {
     const body = $('#gBody');
-    if (!all.length) { body.replaceChildren(emptyRow(8, 'No data for this month yet.')); return; }
+    if (!all.length) { body.replaceChildren(emptyRow(6, 'No data for this month yet.')); return; }
     const by = new Map();
     all.forEach(i => { if (!by.has(i.group)) by.set(i.group, []); by.get(i.group).push(i); });
     const [gk, gd] = S.gsort.split(':'); const gdir = +gd;
@@ -731,7 +731,7 @@ td.item .flag.info { color: #8fbcf0; border-color: rgba(106,167,232,.5); }
       if (!total) { tr.dataset.g = g; tr.tabIndex = 0; }
       tr.append(el('td', 'b', total ? 'All groups' : g),
         el('td', 'n', fmt.kg(t.req)), el('td', 'n pdy', t.hasPend ? fmt.kg(t.pendency) : '–'), el('td', 'n', fmt.kg(t.sent)),
-        pctCell(t.pct), t.pendency > 0 ? pctCell(t.pctPend) : el('td', 'n m', '–'), el('td', 'n rate hs', t.rate == null ? '—' : fmt.r2(t.rate)), el('td', 'n m hs', fmt.kg(t.value)));
+        pctCell(t.pct), t.pendency > 0 ? pctCell(t.pctPend) : el('td', 'n m', '–'));
       return tr;
     };
     body.replaceChildren(...rows.map(r => mk(r.g, r.t, false)), mk('All', totals(all), true));
