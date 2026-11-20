@@ -1247,7 +1247,9 @@ td.item .flag.info { color: #8fbcf0; border-color: rgba(106,167,232,.5); }
     const get = async n => { let r; try { r = await fetch(url(n), { cache: 'no-store' }); } catch (_) { throw new Error('could not reach the Google Sheet. Check it is shared as “Anyone with the link · Viewer” and that you are online'); }
       if (!r.ok) throw new Error('Google Sheets answered ' + r.status); const tx = await r.text(); if (/^\s*<|google\.visualization/i.test(tx)) throw new Error('the Google Sheet is not shared for viewing'); return tx; };
     let a, b, c, via = null;
-    try { [a, b, c] = await Promise.all([get(SHEETS.rpc), get(SHEETS.proj), get(SHEETS.nonuse).catch(() => '')]); }
+    // Receipts tab: Google's full CSV export keeps every date (the quick link drops dates when a column mixes formats).
+    const getRpc = async () => { try { const r = await fetch(`https://docs.google.com/spreadsheets/d/${S.sheet.id}/export?format=csv&gid=0&t=${Date.now()}`, { cache: 'no-store' }); if (r.ok) { const tx = await r.text(); if (/in qty/i.test(tx.split(/\r?\n/, 1)[0] || '')) return tx; } } catch (_) {} return get(SHEETS.rpc); };
+    try { [a, b, c] = await Promise.all([getRpc(), get(SHEETS.proj), get(SHEETS.nonuse).catch(() => '')]); }
     catch (direct) {
       if (location.protocol === 'file:') throw direct;
       const local = async n => { const r = await fetch('data/' + encodeURIComponent(n) + '.csv?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) throw new Error('no copy'); return r.text(); };
