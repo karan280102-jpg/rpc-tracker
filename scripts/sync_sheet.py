@@ -12,8 +12,9 @@ TABS = {
     "RPC Raw Material": lambda head: "in qty" in head,
     "Projection Qty": lambda head: "req" in head and "in qty" not in head,
     "Non-Usable Data": lambda head: "qty" in head and "in qty" not in head,
+    "MR": lambda head: "mr number" in head,
 }
-OPTIONAL = {"Non-Usable Data"}
+OPTIONAL = {"Non-Usable Data", "MR"}
 OUT = os.path.join(os.path.dirname(__file__), "..", "data")
 UA = {"User-Agent": "rpc-tracker-sync"}
 
