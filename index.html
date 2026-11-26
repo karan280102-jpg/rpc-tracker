@@ -355,9 +355,9 @@ td .tag.bad { background: rgba(236,106,92,.14); color: var(--red); } td .tag.ex 
   </header>
 
   <nav class="views" role="tablist" aria-label="Dashboard view">
-    <button type="button" role="tab" data-v="proj" aria-selected="true">Projection vs RPC</button>
+    <button type="button" role="tab" data-v="trend" aria-selected="true">Daily Trend</button>
     <button type="button" role="tab" data-v="mr" aria-selected="false">MR pendency <span class="n" id="mrTabN"></span></button>
-    <button type="button" role="tab" data-v="trend" aria-selected="false">Daily Trend</button>
+    <button type="button" role="tab" data-v="proj" aria-selected="false">Projection vs RPC</button>
   </nav>
 
   <div class="upbar pv" id="upBar" role="button" tabindex="0" aria-label="Upload a new Projection Excel file">
@@ -1174,7 +1174,7 @@ td .tag.bad { background: rgba(236,106,92,.14); color: var(--red); } td .tag.ex 
     $('#pageTitle').innerHTML = S.view === 'mr' ? 'MR <em>pendency</em>' : S.view === 'trend' ? 'Daily <em>trend</em>' : 'Projection vs <em>sent to RPC</em>';
     document.title = S.view === 'mr' ? 'MR Pendency · RPC Tracker' : S.view === 'trend' ? 'Daily Trend · RPC Tracker' : 'RPC Projection Tracker';
     $$('.views button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.v === S.view)));
-    try { history.replaceState(null, '', S.view === 'mr' ? '#mr' : S.view === 'trend' ? '#trend' : location.pathname + location.search); } catch (_) {}
+    try { history.replaceState(null, '', S.view === 'mr' ? '#mr' : S.view === 'proj' ? '#proj' : location.pathname + location.search); } catch (_) {}
   }
 
   /* ---------------- drawer ---------------- */
@@ -1853,7 +1853,7 @@ td .tag.bad { background: rgba(236,106,92,.14); color: var(--red); } td .tag.ex 
   $('#mdAll').addEventListener('change', e => { S.mrAll = e.target.checked; renderMrDrawer(); });
   $('#scrim').addEventListener('click', closeMrDrawer);
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && S.mrOpen != null) closeMrDrawer(); });
-  setView(location.hash === '#mr' ? 'mr' : location.hash === '#trend' ? 'trend' : 'proj');
+  setView(location.hash === '#mr' ? 'mr' : location.hash === '#proj' ? 'proj' : 'trend');
   $('#trGroups').addEventListener('click', e => { const b = e.target.closest('button[data-g]'); if (b) { S.trGroup = b.dataset.g; renderTrend(); } });
   $('#trDayPill').addEventListener('click', () => { S.trDay = null; renderTrend(); });
   $('#trZoomIn').addEventListener('click', () => stepZoom(1));
