@@ -279,14 +279,24 @@ body:not(.v-tr) .tv { display: none !important; }
 .day[aria-pressed="true"] .d1, .day[aria-pressed="true"] .d3 { color: rgba(27,21,3,.75); }
 .day[aria-pressed="true"] .bar { background: rgba(27,21,3,.4); }
 .day.all .d2 { font-size: 14px; }
-.kpis.trk { grid-template-columns: 1.2fr 1fr 1fr 1.2fr 1fr; }
+.grpchips { display: flex; flex-wrap: wrap; gap: 5px; padding: 8px 0 0; }
+.grpchips button { border: 1px solid var(--line-2); background: var(--panel); color: var(--muted); padding: 4px 10px; border-radius: 999px; cursor: pointer; font: 600 12px var(--body); display: inline-flex; gap: 6px; align-items: baseline; }
+.grpchips button .n { font-size: 10.5px; color: var(--dim); font-variant-numeric: tabular-nums; font-weight: 600; }
+.grpchips button:hover { color: var(--text); border-color: var(--gold); }
+.grpchips button[aria-pressed="true"] { background: var(--gold); border-color: var(--gold); color: #1b1503; }
+.grpchips button[aria-pressed="true"] .n { color: rgba(27,21,3,.7); }
+.trstats { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; padding: 9px 2px 0; font-size: 12.5px; color: var(--muted); }
+.trstats b { font-family: var(--display); font-size: 17px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; margin-right: 4px; }
+.trstats b.em { color: #7fdcb6; } .trstats b.gd { color: var(--gold-2); }
+.trstats i { font-style: normal; color: var(--line-2); }
+.daypill { align-self: end; border: 0; background: var(--gold); color: #1b1503; padding: 8px 14px; border-radius: 999px; font: 700 12.5px var(--body); cursor: pointer; }
 @media (max-width: 1100px) { .kpis.trk { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 760px) { .kpis.trk { grid-template-columns: repeat(2, 1fr); } }
 #trTable th.dc { cursor: pointer; min-width: 64px; }
 #trTable th.dc:hover { color: var(--gold-2); }
 #trTable th.dc span { white-space: nowrap; }
 #trTable td.z { color: var(--line-2); }
-#trTable td.item, #trTable th.first { position: sticky; left: 0; z-index: 1; background: var(--panel); min-width: 15rem; max-width: 24rem; }
+#trTable td.item, #trTable th.first { position: sticky; left: 0; z-index: 1; background: var(--panel); min-width: 15rem; max-width: 30rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #trTable th.first { z-index: 3; background: var(--panel-2); }
 #trTable tr.total td.item { background: var(--panel-2); }
 #trTable td.tot, #trTable th.tot { font-weight: 700; color: var(--gold-2); }
@@ -452,29 +462,18 @@ td .tag.bad { background: rgba(236,106,92,.14); color: var(--red); } td .tag.ex 
     </div>
   </section>
 
-  <section class="filters tv" aria-label="Daily trend filters">
-    <div class="f"><label for="trMonth">Month</label><select id="trMonth"></select></div>
-    <div class="f"><label for="trGroup">Item group</label><select id="trGroup"></select></div>
-    <div class="f"><label for="trSearch">Search item</label><input id="trSearch" type="search" placeholder="Chia, cashew, khalas…" autocomplete="off"></div>
-  </section>
-
-  <section class="sec tv" style="margin-top:10px">
+  <section class="sec tv" style="margin-top:4px">
     <div class="tools" style="position:static">
       <div class="tf"><label>RPC warehouse</label>
         <div class="seg" id="trWh" role="group" aria-label="Warehouse"></div>
       </div>
-      <button type="button" class="btn" id="trReset" style="margin-left:auto;padding:9px 14px" title="Show all days, all warehouses, all groups">
+      <div class="tf" style="min-width:220px"><label for="trSearch">Search item</label><input id="trSearch" type="search" placeholder="Chia, cashew, khalas…" autocomplete="off"></div>
+      <button type="button" class="daypill" id="trDayPill" hidden title="Back to all days"></button>
+      <button type="button" class="btn" id="trReset" style="margin-left:auto;padding:9px 14px" title="All days, all warehouses, all groups">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2.5 8a5.5 5.5 0 1 0 1.6-3.9M2.5 2.5v3h3"/></svg>Reset</button>
     </div>
-    <div class="days" id="trDays" role="group" aria-label="Pick a day"></div>
-  </section>
-
-  <section class="kpis trk tv" aria-label="Daily trend headline figures">
-    <div class="k t-em"><div class="l" id="trK1l">Sent to RPC</div><div class="v"><span data-t="sent">—</span><small>kg</small></div><div class="s"><b data-t="rc">—</b> receipts</div></div>
-    <div class="k t-gold"><div class="l">Dispatch days</div><div class="v"><span data-t="days">—</span><small>days</small></div><div class="s" data-t="span">—</div></div>
-    <div class="k t-amb"><div class="l">Average per day</div><div class="v"><span data-t="avg">—</span><small>kg</small></div><div class="s">on days something was sent</div></div>
-    <div class="k t-gold"><div class="l">Busiest day</div><div class="v"><span data-t="top">—</span></div><div class="s" data-t="topQ">—</div></div>
-    <div class="k t-em"><div class="l">Items sent</div><div class="v"><span data-t="items">—</span><small>items</small></div><div class="s" data-t="itemsS">—</div></div>
+    <div class="grpchips" id="trGroups" role="group" aria-label="Item group"></div>
+    <div class="trstats" id="trStats"></div>
   </section>
 
   <section class="sec tv" id="trSec">
@@ -1052,8 +1051,6 @@ td .tag.bad { background: rgba(236,106,92,.14); color: var(--red); } td .tag.ex 
     return out;
   }
   function renderTrend() {
-    const keys = Object.keys(S.months).sort().reverse();
-    const ms = $('#trMonth'); ms.replaceChildren(...keys.map(k => new Option(fmt.monthLabel(k), k))); if (!keys.length) ms.append(new Option('No data yet', '')); ms.value = S.month || '';
     const doc = currentDoc();
     const all = doc ? trData(doc) : [];
     const whs = TR_WH.filter(w => all.some(r => r.wh === w)).concat([...new Set(all.map(r => r.wh))].filter(w => !TR_WH.includes(w)));
@@ -1061,32 +1058,29 @@ td .tag.bad { background: rgba(236,106,92,.14); color: var(--red); } td .tag.ex 
     const wq = w => all.filter(r => w === 'All' || r.wh === w).reduce((a, r) => a + r.qty, 0);
     $('#trWh').replaceChildren(...['All', ...whs].map(w => { const b = el('button'); b.type = 'button'; b.dataset.w = w; b.setAttribute('aria-pressed', String(S.trWh === w)); b.append(w === 'All' ? 'All' : w, el('span', 'n', fmt.kg(wq(w)))); return b; }));
     const inWh = all.filter(r => S.trWh === 'All' || r.wh === S.trWh);
-    const groups = [...new Set(inWh.map(r => r.group))].sort();
+    const gq = new Map(); inWh.forEach(r => gq.set(r.group, (gq.get(r.group) || 0) + r.qty));
+    const groups = [...gq.keys()].sort((a, b) => gq.get(b) - gq.get(a));
     if (S.trGroup !== 'All' && !groups.includes(S.trGroup)) S.trGroup = 'All';
-    const gs = $('#trGroup'); gs.replaceChildren(new Option('All groups', 'All'), ...groups.map(g => new Option(g, g))); gs.value = S.trGroup;
+    $('#trGroups').replaceChildren(...['All', ...groups].map(g => { const b = el('button'); b.type = 'button'; b.dataset.g = g; b.setAttribute('aria-pressed', String(S.trGroup === g));
+      b.append(g === 'All' ? 'All groups' : g, el('span', 'n', fmt.kg(g === 'All' ? inWh.reduce((a, r) => a + r.qty, 0) : gq.get(g)))); return b; }));
     const q = S.trQ.trim().toLowerCase();
     const sel = inWh.filter(r => (S.trGroup === 'All' || r.group === S.trGroup) && (!q || r.item.toLowerCase().includes(q) || r.group.toLowerCase().includes(q)));
     // days with a dispatch only
     const dayTot = new Map(); sel.forEach(r => dayTot.set(r.date, (dayTot.get(r.date) || 0) + r.qty));
     const days = [...dayTot.keys()].sort();
     if (S.trDay && !dayTot.has(S.trDay)) S.trDay = null;
-    const mx = Math.max(1, ...dayTot.values());
-    const chip = (iso) => { const b = el('button', 'day' + (iso ? '' : ' all')); b.type = 'button'; b.dataset.d = iso || ''; b.setAttribute('aria-pressed', String((S.trDay || '') === (iso || '')));
-      if (!iso) { b.append(el('span', 'd1', days.length + ' days'), el('span', 'd2', 'All days'), el('span', 'd3', fmt.kg(sel.reduce((a, r) => a + r.qty, 0)) + ' kg')); }
-      else { const L = dayLbl(iso); b.append(el('span', 'd1', L.w), el('span', 'd2', L.d), el('span', 'd3', fmt.kg(dayTot.get(iso)) + ' kg')); const bar = el('span', 'bar'); bar.style.width = Math.max(8, dayTot.get(iso) / mx * 100) + '%'; b.append(bar); }
-      return b; };
-    $('#trDays').replaceChildren(chip(null), ...days.map(chip));
     // KPIs
     const view = S.trDay ? sel.filter(r => r.date === S.trDay) : sel;
-    const setT = (k, v) => $$(`[data-t="${k}"]`).forEach(n => n.textContent = v);
     const tot = view.reduce((a, r) => a + r.qty, 0);
-    $('#trK1l').textContent = S.trDay ? 'Sent on ' + dayLbl(S.trDay).d : 'Sent to RPC';
-    setT('sent', fmt.kg(tot)); setT('rc', fmt.int(view.length));
-    setT('days', fmt.int(S.trDay ? 1 : days.length)); setT('span', days.length ? (S.trDay ? dayLbl(S.trDay).w + ', ' + fmt.date(S.trDay) : fmt.date(days[0]) + ' – ' + fmt.date(days[days.length - 1])) : '—');
-    setT('avg', days.length ? fmt.kg((S.trDay ? tot : sel.reduce((a, r) => a + r.qty, 0) / days.length)) : '—');
     const top = days.reduce((a, d) => !a || dayTot.get(d) > dayTot.get(a) ? d : a, null);
-    setT('top', top ? dayLbl(top).d : '—'); setT('topQ', top ? fmt.kg(dayTot.get(top)) + ' kg · ' + dayLbl(top).w : '—');
-    const itemSet = new Set(view.map(r => r.item)); setT('items', fmt.int(itemSet.size)); setT('itemsS', S.trDay ? 'sent on this day' : 'sent at least once');
+    const itemSet = new Set(view.map(r => r.item));
+    const st = (v, cls, label) => { const sp = el('span'); sp.append(el('b', cls, v), label); return sp; };
+    const sep = () => el('i', null, '|');
+    const pill = $('#trDayPill'); pill.hidden = !S.trDay; if (S.trDay) pill.textContent = dayLbl(S.trDay).w + ', ' + dayLbl(S.trDay).d + '   ✕  all days';
+    $('#trStats').replaceChildren(...(sel.length ? (S.trDay
+      ? [st(fmt.kg(tot), 'em', 'kg sent on ' + dayLbl(S.trDay).w + ', ' + fmt.date(S.trDay)), sep(), st(fmt.int(view.length), null, 'receipts'), sep(), st(fmt.int(itemSet.size), null, 'items')]
+      : [st(fmt.kg(tot), 'em', 'kg sent in ' + fmt.monthLabel(S.month)), sep(), st(fmt.int(view.length), null, 'receipts'), sep(), st(fmt.int(days.length), null, 'dispatch days'), sep(),
+         st(fmt.kg(tot / days.length), null, 'kg avg per day'), sep(), st(dayLbl(top).d, 'gd', 'busiest · ' + fmt.kg(dayTot.get(top)) + ' kg'), sep(), st(fmt.int(itemSet.size), null, 'items')]) : []));
     // table
     const head = $('#trHead'), body = $('#trBody');
     const by = new Map(); view.forEach(r => { if (!by.has(r.item)) by.set(r.item, { item: r.item, group: r.group, tot: 0, d: new Map(), w: new Map(), n: 0 }); const o = by.get(r.item); o.tot += r.qty; o.n++; o.d.set(r.date, (o.d.get(r.date) || 0) + r.qty); o.w.set(r.wh, (o.w.get(r.wh) || 0) + r.qty); });
@@ -1095,18 +1089,18 @@ td .tag.bad { background: rgba(236,106,92,.14); color: var(--red); } td .tag.ex 
     if (!doc || !sel.length) { head.replaceChildren(); body.replaceChildren(emptyRow(3, doc ? 'Nothing was sent to RPC for these filters.' : 'No data yet.')); $('#trFoot').textContent = ''; return; }
     if (!S.trDay) {
       $('#trIdx').textContent = 'Daily trend · Item × day'; $('#trH').textContent = 'Quantity sent by day';
-      $('#trNote').textContent = 'All quantities in kg · Only days with a dispatch are shown · Click a date to see only that day';
-      const hr = el('tr'); hr.append(th('Item', 'first'), th('Item group'));
+      $('#trNote').textContent = 'All quantities in kg · Only days with a dispatch are shown · Click a date heading to see only that day';
+      const hr = el('tr'); hr.append(th('Item', 'first'));
       days.forEach(d => { const h = th(dayLbl(d).d, 'n dc'); h.dataset.d = d; h.title = dayLbl(d).w + ', ' + fmt.date(d) + ' · click to see only this day'; hr.append(h); });
       hr.append(th('Total', 'n tot')); head.replaceChildren(hr);
-      const trs = items.map(o => { const tr = el('tr'); tr.append(el('td', 'item', o.item), el('td', 'm', o.group));
+      const trs = items.map(o => { const tr = el('tr'); const td = el('td', 'item', o.item); td.title = o.group; tr.append(td);
         days.forEach(d => { const v = o.d.get(d); tr.append(el('td', 'n' + (v ? '' : ' z'), v ? fmt.kg(v) : '·')); }); tr.append(el('td', 'n tot', fmt.kg(o.tot))); return tr; });
-      const tt = el('tr', 'total'); tt.append(el('td', 'item b', 'Total · ' + items.length + ' items'), el('td')); days.forEach(d => tt.append(el('td', 'n', fmt.kg(dayTot.get(d))))); tt.append(el('td', 'n tot', fmt.kg(tot)));
+      const tt = el('tr', 'total'); tt.append(el('td', 'item b', 'Total · ' + items.length + ' items')); days.forEach(d => tt.append(el('td', 'n', fmt.kg(dayTot.get(d))))); tt.append(el('td', 'n tot', fmt.kg(tot)));
       body.replaceChildren(...trs, tt);
     } else {
       const L = dayLbl(S.trDay);
       $('#trIdx').textContent = 'Daily trend · ' + L.w + ', ' + fmt.date(S.trDay); $('#trH').textContent = 'Sent on ' + L.d;
-      $('#trNote').textContent = 'All quantities in kg · Click “All days” above to go back';
+      $('#trNote').textContent = 'All quantities in kg · Click the date button above to go back to all days';
       const wcols = (S.trWh === 'All' ? whs : [S.trWh]).filter(w => view.some(r => r.wh === w));
       const hr = el('tr'); hr.append(th('Item', 'first'), th('Item group'), ...wcols.map(w => th(w, 'n')), th('Receipts', 'n'), th('Total', 'n tot')); head.replaceChildren(hr);
       const trs = items.map(o => { const tr = el('tr'); tr.append(el('td', 'item', o.item), el('td', 'm', o.group), ...wcols.map(w => { const v = o.w.get(w); return el('td', 'n' + (v ? '' : ' z'), v ? fmt.kg(v) : '·'); }), el('td', 'n m', fmt.int(o.n)), el('td', 'n tot', fmt.kg(o.tot))); return tr; });
@@ -1817,12 +1811,11 @@ td .tag.bad { background: rgba(236,106,92,.14); color: var(--red); } td .tag.ex 
   $('#scrim').addEventListener('click', closeMrDrawer);
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && S.mrOpen != null) closeMrDrawer(); });
   setView(location.hash === '#mr' ? 'mr' : location.hash === '#trend' ? 'trend' : 'proj');
-  $('#trMonth').addEventListener('change', e => { S.month = e.target.value; S.trDay = null; render(); });
-  $('#trGroup').addEventListener('change', e => { S.trGroup = e.target.value; renderTrend(); });
+  $('#trGroups').addEventListener('click', e => { const b = e.target.closest('button[data-g]'); if (b) { S.trGroup = b.dataset.g; renderTrend(); } });
+  $('#trDayPill').addEventListener('click', () => { S.trDay = null; renderTrend(); });
   $('#trSearch').addEventListener('input', e => { S.trQ = e.target.value; renderTrend(); });
   $('#trWh').addEventListener('click', e => { const b = e.target.closest('button[data-w]'); if (b) { S.trWh = b.dataset.w; renderTrend(); } });
-  $('#trDays').addEventListener('click', e => { const b = e.target.closest('button.day'); if (b) { S.trDay = b.dataset.d || null; renderTrend(); } });
-  $('#trHead').addEventListener('click', e => { const h = e.target.closest('th[data-d]'); if (h) { S.trDay = h.dataset.d; renderTrend(); $('#trDays').scrollIntoView({ behavior: 'smooth', block: 'center' }); } });
+  $('#trHead').addEventListener('click', e => { const h = e.target.closest('th[data-d]'); if (h) { S.trDay = h.dataset.d; renderTrend(); } });
   $('#trReset').addEventListener('click', () => { S.trDay = null; S.trWh = 'All'; S.trGroup = 'All'; S.trQ = ''; $('#trSearch').value = ''; renderTrend(); });
   render(); showLocalNote();
   requestAnimationFrame(finishLoader);
