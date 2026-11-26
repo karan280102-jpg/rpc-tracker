@@ -295,6 +295,7 @@ body:not(.v-tr) .tv { display: none !important; }
 .zoom button.fit { width: auto; padding: 0 12px; font-size: 12px; color: var(--gold-2); }
 .zoom span { min-width: 44px; text-align: center; font-size: 12px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
 #trTable th.pdy, #trTable td.pdy { border-right: 1px solid var(--line-2); }
+#trTable td.pdy0 { color: #9cc3f2; font-weight: 600; }
 .daypill { align-self: end; border: 0; background: var(--gold); color: #1b1503; padding: 8px 14px; border-radius: 999px; font: 700 12.5px var(--body); cursor: pointer; }
 @media (max-width: 1100px) { .kpis.trk { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 760px) { .kpis.trk { grid-template-columns: repeat(2, 1fr); } }
@@ -1104,13 +1105,13 @@ td .tag.bad { background: rgba(236,106,92,.14); color: var(--red); } td .tag.ex 
     if (!S.trDay) {
       $('#trIdx').textContent = 'Daily trend · Item × day'; $('#trH').textContent = 'Quantity sent by day';
       $('#trNote').textContent = 'All quantities in kg · Only days with a dispatch are shown · Click a date heading to see only that day';
-      const pc = o => el('td', 'n pdy', o.pend == null ? '–' : fmt.kg(o.pend)); const pendTot = items.reduce((a, o) => a + (o.pend || 0), 0);
-      const hr = el('tr'); hr.append(th('Item', 'first'), th('Pendency', 'n pdy'));
+      const pc = o => el('td', 'n pdy0', o.pend == null ? '–' : fmt.kg(o.pend)); const pendTot = items.reduce((a, o) => a + (o.pend || 0), 0);
+      const hr = el('tr'); hr.append(th('Item', 'first'), th('Pendency', 'n'), th('Total', 'n tot pdy'));
       days.forEach(d => { const h = th(dayLbl(d).d, 'n dc'); h.dataset.d = d; h.title = dayLbl(d).w + ', ' + fmt.date(d) + ' · click to see only this day'; hr.append(h); });
-      hr.append(th('Total', 'n tot')); head.replaceChildren(hr);
-      const trs = items.map(o => { const tr = el('tr'); const td = el('td', 'item', o.item); td.title = o.group; tr.append(td, pc(o));
-        days.forEach(d => { const v = o.d.get(d); tr.append(el('td', 'n' + (v ? '' : ' z'), v ? fmt.kg(v) : '·')); }); tr.append(el('td', 'n tot', fmt.kg(o.tot))); return tr; });
-      const tt = el('tr', 'total'); tt.append(el('td', 'item b', 'Total · ' + items.length + ' items'), el('td', 'n pdy', fmt.kg(pendTot))); days.forEach(d => tt.append(el('td', 'n', fmt.kg(dayTot.get(d))))); tt.append(el('td', 'n tot', fmt.kg(tot)));
+      head.replaceChildren(hr);
+      const trs = items.map(o => { const tr = el('tr'); const td = el('td', 'item', o.item); td.title = o.group; tr.append(td, pc(o), el('td', 'n tot pdy', fmt.kg(o.tot)));
+        days.forEach(d => { const v = o.d.get(d); tr.append(el('td', 'n' + (v ? '' : ' z'), v ? fmt.kg(v) : '·')); }); return tr; });
+      const tt = el('tr', 'total'); tt.append(el('td', 'item b', 'Total · ' + items.length + ' items'), el('td', 'n pdy0', fmt.kg(pendTot)), el('td', 'n tot pdy', fmt.kg(tot))); days.forEach(d => tt.append(el('td', 'n', fmt.kg(dayTot.get(d)))));
       body.replaceChildren(...trs, tt);
     } else {
       const L = dayLbl(S.trDay);
@@ -1118,9 +1119,9 @@ td .tag.bad { background: rgba(236,106,92,.14); color: var(--red); } td .tag.ex 
       $('#trNote').textContent = 'All quantities in kg · Click the date button above to go back to all days';
       const wcols = (S.trWh === 'All' ? whs : [S.trWh]).filter(w => view.some(r => r.wh === w));
       const pendTot = items.reduce((a, o) => a + (o.pend || 0), 0);
-      const hr = el('tr'); hr.append(th('Item', 'first'), th('Item group'), th('Pendency', 'n pdy'), ...wcols.map(w => th(w, 'n')), th('Receipts', 'n'), th('Total', 'n tot')); head.replaceChildren(hr);
-      const trs = items.map(o => { const tr = el('tr'); tr.append(el('td', 'item', o.item), el('td', 'm', o.group), el('td', 'n pdy', o.pend == null ? '–' : fmt.kg(o.pend)), ...wcols.map(w => { const v = o.w.get(w); return el('td', 'n' + (v ? '' : ' z'), v ? fmt.kg(v) : '·'); }), el('td', 'n m', fmt.int(o.n)), el('td', 'n tot', fmt.kg(o.tot))); return tr; });
-      const tt = el('tr', 'total'); tt.append(el('td', 'item b', 'Total · ' + items.length + ' items'), el('td'), el('td', 'n pdy', fmt.kg(pendTot)), ...wcols.map(w => el('td', 'n', fmt.kg(view.filter(r => r.wh === w).reduce((a, r) => a + r.qty, 0)))), el('td', 'n', fmt.int(view.length)), el('td', 'n tot', fmt.kg(tot)));
+      const hr = el('tr'); hr.append(th('Item', 'first'), th('Item group'), th('Pendency', 'n'), th('Total', 'n tot pdy'), ...wcols.map(w => th(w, 'n')), th('Receipts', 'n')); head.replaceChildren(hr);
+      const trs = items.map(o => { const tr = el('tr'); tr.append(el('td', 'item', o.item), el('td', 'm', o.group), el('td', 'n pdy0', o.pend == null ? '–' : fmt.kg(o.pend)), el('td', 'n tot pdy', fmt.kg(o.tot)), ...wcols.map(w => { const v = o.w.get(w); return el('td', 'n' + (v ? '' : ' z'), v ? fmt.kg(v) : '·'); }), el('td', 'n m', fmt.int(o.n))); return tr; });
+      const tt = el('tr', 'total'); tt.append(el('td', 'item b', 'Total · ' + items.length + ' items'), el('td'), el('td', 'n pdy0', fmt.kg(pendTot)), el('td', 'n tot pdy', fmt.kg(tot)), ...wcols.map(w => el('td', 'n', fmt.kg(view.filter(r => r.wh === w).reduce((a, r) => a + r.qty, 0)))), el('td', 'n', fmt.int(view.length)));
       body.replaceChildren(...trs, tt);
     }
     $('#trFoot').textContent = `${items.length} item${items.length === 1 ? '' : 's'} · ${S.trDay ? fmt.date(S.trDay) : days.length + ' dispatch days in ' + fmt.monthLabel(S.month)}${S.trWh !== 'All' ? ' · ' + S.trWh : ''}${S.trGroup !== 'All' ? ' · ' + S.trGroup : ''}`;
@@ -1148,7 +1149,7 @@ td .tag.bad { background: rgba(236,106,92,.14); color: var(--red); } td .tag.ex 
     const rows = [...by.values()].map(o => { let t = 0; days.forEach(d => { const k = fmt.date(d); if (o[k]) { o[k] = Math.round(o[k]); t += o[k]; } }); o['Total (kg)'] = t; return o; }).sort((a, b) => b['Total (kg)'] - a['Total (kg)']);
     const det = sel.slice().sort((a, b) => a.date.localeCompare(b.date) || a.item.localeCompare(b.item)).map(r => ({ 'Date': r.date, 'Item': r.item, 'Item group': r.group, 'Warehouse': r.wh, 'Voucher #': r.vno, 'Qty (kg)': Math.round(r.qty * 100) / 100 }));
     const wb = XLSX.utils.book_new();
-    const ws1 = XLSX.utils.json_to_sheet(rows, { header: ['Item', 'Item group', 'Pendency (kg)', ...days.map(fmt.date), 'Total (kg)'] }); ws1['!cols'] = [{ wch: 60 }, { wch: 16 }, { wch: 13 }, ...days.map(() => ({ wch: 11 })), { wch: 11 }];
+    const ws1 = XLSX.utils.json_to_sheet(rows, { header: ['Item', 'Item group', 'Pendency (kg)', 'Total (kg)', ...days.map(fmt.date)] }); ws1['!cols'] = [{ wch: 60 }, { wch: 16 }, { wch: 13 }, { wch: 11 }, ...days.map(() => ({ wch: 11 }))];
     XLSX.utils.book_append_sheet(wb, ws1, 'Daily trend');
     const ws2 = XLSX.utils.json_to_sheet(det); ws2['!cols'] = [11, 60, 16, 12, 15, 10].map(w => ({ wch: w })); XLSX.utils.book_append_sheet(wb, ws2, 'Receipts');
     const name = `RPC_Daily_Trend_${S.trDay || doc.key}${S.trWh !== 'All' ? '_' + S.trWh.replace(/\W+/g, '_') : ''}.xlsx`;
