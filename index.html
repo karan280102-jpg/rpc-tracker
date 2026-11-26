@@ -264,8 +264,32 @@ td.item .flag.info { color: #8fbcf0; border-color: rgba(106,167,232,.5); }
 .views button .n { font-size: 11px; padding: 1px 7px; border-radius: 999px; background: rgba(236,106,92,.16); color: var(--red); font-variant-numeric: tabular-nums; }
 .views button[aria-selected="true"] { background: var(--gold); color: #1b1503; }
 .views button[aria-selected="true"] .n { background: rgba(27,21,3,.15); color: #1b1503; }
-body.v-mr .pv { display: none !important; }
+body.v-mr .pv, body.v-tr .pv { display: none !important; }
 body:not(.v-mr) .mv { display: none !important; }
+body:not(.v-tr) .tv { display: none !important; }
+/* Daily Trend */
+.days { display: flex; gap: 6px; overflow-x: auto; padding: 8px 2px 10px; scrollbar-width: thin; }
+.day { flex: 0 0 auto; min-width: 84px; display: grid; gap: 2px; text-align: left; padding: 8px 11px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--text); cursor: pointer; font: inherit; }
+.day:hover { border-color: var(--line-2); }
+.day .d1 { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); font-weight: 700; }
+.day .d2 { font-family: var(--display); font-size: 16px; font-weight: 600; }
+.day .d3 { font-size: 11.5px; color: #7fdcb6; font-variant-numeric: tabular-nums; font-weight: 600; }
+.day .bar { height: 3px; border-radius: 3px; background: linear-gradient(90deg, var(--emerald), var(--gold)); margin-top: 3px; }
+.day[aria-pressed="true"] { background: var(--gold); border-color: var(--gold); color: #1b1503; }
+.day[aria-pressed="true"] .d1, .day[aria-pressed="true"] .d3 { color: rgba(27,21,3,.75); }
+.day[aria-pressed="true"] .bar { background: rgba(27,21,3,.4); }
+.day.all .d2 { font-size: 14px; }
+.kpis.trk { grid-template-columns: 1.2fr 1fr 1fr 1.2fr 1fr; }
+@media (max-width: 1100px) { .kpis.trk { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 760px) { .kpis.trk { grid-template-columns: repeat(2, 1fr); } }
+#trTable th.dc { cursor: pointer; min-width: 64px; }
+#trTable th.dc:hover { color: var(--gold-2); }
+#trTable th.dc span { white-space: nowrap; }
+#trTable td.z { color: var(--line-2); }
+#trTable td.item, #trTable th.first { position: sticky; left: 0; z-index: 1; background: var(--panel); min-width: 15rem; max-width: 24rem; }
+#trTable th.first { z-index: 3; background: var(--panel-2); }
+#trTable tr.total td.item { background: var(--panel-2); }
+#trTable td.tot, #trTable th.tot { font-weight: 700; color: var(--gold-2); }
 .kpis.mrk { grid-template-columns: 1.2fr 1fr 1fr 1fr 1.1fr; }
 @media (max-width: 1100px) { .kpis.mrk { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 760px) { .kpis.mrk { grid-template-columns: repeat(2, 1fr); } }
@@ -314,6 +338,7 @@ td .tag.bad { background: rgba(236,106,92,.14); color: var(--red); } td .tag.ex 
   <nav class="views" role="tablist" aria-label="Dashboard view">
     <button type="button" role="tab" data-v="proj" aria-selected="true">Projection vs RPC</button>
     <button type="button" role="tab" data-v="mr" aria-selected="false">MR pendency <span class="n" id="mrTabN"></span></button>
+    <button type="button" role="tab" data-v="trend" aria-selected="false">Daily Trend</button>
   </nav>
 
   <div class="upbar pv" id="upBar" role="button" tabindex="0" aria-label="Upload a new Projection Excel file">
@@ -424,6 +449,42 @@ td .tag.bad { background: rgba(236,106,92,.14); color: var(--red); } td .tag.ex 
         </table>
       </div>
       <div class="foot" id="iFoot"></div>
+    </div>
+  </section>
+
+  <section class="filters tv" aria-label="Daily trend filters">
+    <div class="f"><label for="trMonth">Month</label><select id="trMonth"></select></div>
+    <div class="f"><label for="trGroup">Item group</label><select id="trGroup"></select></div>
+    <div class="f"><label for="trSearch">Search item</label><input id="trSearch" type="search" placeholder="Chia, cashew, khalas…" autocomplete="off"></div>
+  </section>
+
+  <section class="sec tv" style="margin-top:10px">
+    <div class="tools" style="position:static">
+      <div class="tf"><label>RPC warehouse</label>
+        <div class="seg" id="trWh" role="group" aria-label="Warehouse"></div>
+      </div>
+      <button type="button" class="btn" id="trReset" style="margin-left:auto;padding:9px 14px" title="Show all days, all warehouses, all groups">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2.5 8a5.5 5.5 0 1 0 1.6-3.9M2.5 2.5v3h3"/></svg>Reset</button>
+    </div>
+    <div class="days" id="trDays" role="group" aria-label="Pick a day"></div>
+  </section>
+
+  <section class="kpis trk tv" aria-label="Daily trend headline figures">
+    <div class="k t-em"><div class="l" id="trK1l">Sent to RPC</div><div class="v"><span data-t="sent">—</span><small>kg</small></div><div class="s"><b data-t="rc">—</b> receipts</div></div>
+    <div class="k t-gold"><div class="l">Dispatch days</div><div class="v"><span data-t="days">—</span><small>days</small></div><div class="s" data-t="span">—</div></div>
+    <div class="k t-amb"><div class="l">Average per day</div><div class="v"><span data-t="avg">—</span><small>kg</small></div><div class="s">on days something was sent</div></div>
+    <div class="k t-gold"><div class="l">Busiest day</div><div class="v"><span data-t="top">—</span></div><div class="s" data-t="topQ">—</div></div>
+    <div class="k t-em"><div class="l">Items sent</div><div class="v"><span data-t="items">—</span><small>items</small></div><div class="s" data-t="itemsS">—</div></div>
+  </section>
+
+  <section class="sec tv" id="trSec">
+    <div class="sec-h">
+      <div><div class="idx" id="trIdx">Daily trend · Item-wise</div><h2 id="trH">Quantity sent by day</h2></div>
+      <p id="trNote">All quantities in kg · Only days with a dispatch are shown · Click a date to see only that day</p>
+    </div>
+    <div class="card">
+      <div class="scroll"><table id="trTable"><thead id="trHead"></thead><tbody id="trBody"></tbody></table></div>
+      <div class="foot" id="trFoot"></div>
     </div>
   </section>
 
@@ -616,6 +677,7 @@ td .tag.bad { background: rgba(236,106,92,.14); color: var(--red); } td .tag.ex 
     sort: { key: 'sent', dir: -1 },
     open: null, live: false, names: {},
     view: 'proj', mr: null, mrMonth: 'All', mrGroup: 'All', mrQ: '', mrShow: 'pending', mrSort: 'pend:-1', mrOpen: null, mrAll: false,
+    trDay: null, trWh: 'All', trGroup: 'All', trQ: '',
   };
 
   /* ---------------- model ---------------- */
@@ -727,6 +789,7 @@ td .tag.bad { background: rgba(236,106,92,.14); color: var(--red); } td .tag.ex 
     footInfo();
     if (S.open != null) renderDrawer();
     renderMR();
+    renderTrend();
   }
 
   const tm = d => new Date(d).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
@@ -976,13 +1039,108 @@ td .tag.bad { background: rgba(236,106,92,.14); color: var(--red); } td .tag.ex 
         el('td', 'n' + (r[7] > 0 ? ' b' : ' m'), r[7] > 0 ? fmt.kg(r[7]) : '0'), el('td', 'n' + (r[6] > 0 ? ' mr-ex' : ' m'), r[6] > 0 ? fmt.kg(r[6]) : '–'), st); return tr; })
       : [emptyRow(8, 'Nothing pending and no extra given on this item’s MRs.')]));
   }
+  /* ---------------- Daily trend ---------------- */
+  const TR_WH = ['BRG RPC', 'RPC Indore', 'RPC Kundli'];
+  const whCat = w => /brg/i.test(w) ? 'BRG RPC' : /kundli/i.test(w) ? 'RPC Kundli' : /indore/i.test(w) ? 'RPC Indore' : (w || 'RPC Indore');
+  const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const dayLbl = iso => { const [y, m, d] = iso.split('-'); return { d: +d + ' ' + MONTHS[+m - 1], w: DOW[new Date(+y, +m - 1, +d).getDay()] }; };
+  function trData(doc) {
+    const proj = doc.projection || [], whs = doc.warehouses || [];
+    const out = [];
+    (doc.receipts || []).forEach(r => { const p = proj[r[1]]; if (!p) return; const q = +r[2] || 0; if (q <= 0) return;
+      out.push({ date: r[0], item: p[0], group: p[1] || 'Other', qty: q, wh: whCat(whs[r[8]] || 'RPC Indore - Raw Material Stores'), vno: r[5] }); });
+    return out;
+  }
+  function renderTrend() {
+    const keys = Object.keys(S.months).sort().reverse();
+    const ms = $('#trMonth'); ms.replaceChildren(...keys.map(k => new Option(fmt.monthLabel(k), k))); if (!keys.length) ms.append(new Option('No data yet', '')); ms.value = S.month || '';
+    const doc = currentDoc();
+    const all = doc ? trData(doc) : [];
+    const whs = TR_WH.filter(w => all.some(r => r.wh === w)).concat([...new Set(all.map(r => r.wh))].filter(w => !TR_WH.includes(w)));
+    if (S.trWh !== 'All' && !whs.includes(S.trWh)) S.trWh = 'All';
+    const wq = w => all.filter(r => w === 'All' || r.wh === w).reduce((a, r) => a + r.qty, 0);
+    $('#trWh').replaceChildren(...['All', ...whs].map(w => { const b = el('button'); b.type = 'button'; b.dataset.w = w; b.setAttribute('aria-pressed', String(S.trWh === w)); b.append(w === 'All' ? 'All' : w, el('span', 'n', fmt.kg(wq(w)))); return b; }));
+    const inWh = all.filter(r => S.trWh === 'All' || r.wh === S.trWh);
+    const groups = [...new Set(inWh.map(r => r.group))].sort();
+    if (S.trGroup !== 'All' && !groups.includes(S.trGroup)) S.trGroup = 'All';
+    const gs = $('#trGroup'); gs.replaceChildren(new Option('All groups', 'All'), ...groups.map(g => new Option(g, g))); gs.value = S.trGroup;
+    const q = S.trQ.trim().toLowerCase();
+    const sel = inWh.filter(r => (S.trGroup === 'All' || r.group === S.trGroup) && (!q || r.item.toLowerCase().includes(q) || r.group.toLowerCase().includes(q)));
+    // days with a dispatch only
+    const dayTot = new Map(); sel.forEach(r => dayTot.set(r.date, (dayTot.get(r.date) || 0) + r.qty));
+    const days = [...dayTot.keys()].sort();
+    if (S.trDay && !dayTot.has(S.trDay)) S.trDay = null;
+    const mx = Math.max(1, ...dayTot.values());
+    const chip = (iso) => { const b = el('button', 'day' + (iso ? '' : ' all')); b.type = 'button'; b.dataset.d = iso || ''; b.setAttribute('aria-pressed', String((S.trDay || '') === (iso || '')));
+      if (!iso) { b.append(el('span', 'd1', days.length + ' days'), el('span', 'd2', 'All days'), el('span', 'd3', fmt.kg(sel.reduce((a, r) => a + r.qty, 0)) + ' kg')); }
+      else { const L = dayLbl(iso); b.append(el('span', 'd1', L.w), el('span', 'd2', L.d), el('span', 'd3', fmt.kg(dayTot.get(iso)) + ' kg')); const bar = el('span', 'bar'); bar.style.width = Math.max(8, dayTot.get(iso) / mx * 100) + '%'; b.append(bar); }
+      return b; };
+    $('#trDays').replaceChildren(chip(null), ...days.map(chip));
+    // KPIs
+    const view = S.trDay ? sel.filter(r => r.date === S.trDay) : sel;
+    const setT = (k, v) => $$(`[data-t="${k}"]`).forEach(n => n.textContent = v);
+    const tot = view.reduce((a, r) => a + r.qty, 0);
+    $('#trK1l').textContent = S.trDay ? 'Sent on ' + dayLbl(S.trDay).d : 'Sent to RPC';
+    setT('sent', fmt.kg(tot)); setT('rc', fmt.int(view.length));
+    setT('days', fmt.int(S.trDay ? 1 : days.length)); setT('span', days.length ? (S.trDay ? dayLbl(S.trDay).w + ', ' + fmt.date(S.trDay) : fmt.date(days[0]) + ' – ' + fmt.date(days[days.length - 1])) : '—');
+    setT('avg', days.length ? fmt.kg((S.trDay ? tot : sel.reduce((a, r) => a + r.qty, 0) / days.length)) : '—');
+    const top = days.reduce((a, d) => !a || dayTot.get(d) > dayTot.get(a) ? d : a, null);
+    setT('top', top ? dayLbl(top).d : '—'); setT('topQ', top ? fmt.kg(dayTot.get(top)) + ' kg · ' + dayLbl(top).w : '—');
+    const itemSet = new Set(view.map(r => r.item)); setT('items', fmt.int(itemSet.size)); setT('itemsS', S.trDay ? 'sent on this day' : 'sent at least once');
+    // table
+    const head = $('#trHead'), body = $('#trBody');
+    const by = new Map(); view.forEach(r => { if (!by.has(r.item)) by.set(r.item, { item: r.item, group: r.group, tot: 0, d: new Map(), w: new Map(), n: 0 }); const o = by.get(r.item); o.tot += r.qty; o.n++; o.d.set(r.date, (o.d.get(r.date) || 0) + r.qty); o.w.set(r.wh, (o.w.get(r.wh) || 0) + r.qty); });
+    const items = [...by.values()].sort((a, b) => b.tot - a.tot || a.item.localeCompare(b.item));
+    const th = (txt, cls) => { const h = el('th', cls); h.append(el('span', null, txt)); return h; };
+    if (!doc || !sel.length) { head.replaceChildren(); body.replaceChildren(emptyRow(3, doc ? 'Nothing was sent to RPC for these filters.' : 'No data yet.')); $('#trFoot').textContent = ''; return; }
+    if (!S.trDay) {
+      $('#trIdx').textContent = 'Daily trend · Item × day'; $('#trH').textContent = 'Quantity sent by day';
+      $('#trNote').textContent = 'All quantities in kg · Only days with a dispatch are shown · Click a date to see only that day';
+      const hr = el('tr'); hr.append(th('Item', 'first'), th('Item group'));
+      days.forEach(d => { const h = th(dayLbl(d).d, 'n dc'); h.dataset.d = d; h.title = dayLbl(d).w + ', ' + fmt.date(d) + ' · click to see only this day'; hr.append(h); });
+      hr.append(th('Total', 'n tot')); head.replaceChildren(hr);
+      const trs = items.map(o => { const tr = el('tr'); tr.append(el('td', 'item', o.item), el('td', 'm', o.group));
+        days.forEach(d => { const v = o.d.get(d); tr.append(el('td', 'n' + (v ? '' : ' z'), v ? fmt.kg(v) : '·')); }); tr.append(el('td', 'n tot', fmt.kg(o.tot))); return tr; });
+      const tt = el('tr', 'total'); tt.append(el('td', 'item b', 'Total · ' + items.length + ' items'), el('td')); days.forEach(d => tt.append(el('td', 'n', fmt.kg(dayTot.get(d))))); tt.append(el('td', 'n tot', fmt.kg(tot)));
+      body.replaceChildren(...trs, tt);
+    } else {
+      const L = dayLbl(S.trDay);
+      $('#trIdx').textContent = 'Daily trend · ' + L.w + ', ' + fmt.date(S.trDay); $('#trH').textContent = 'Sent on ' + L.d;
+      $('#trNote').textContent = 'All quantities in kg · Click “All days” above to go back';
+      const wcols = (S.trWh === 'All' ? whs : [S.trWh]).filter(w => view.some(r => r.wh === w));
+      const hr = el('tr'); hr.append(th('Item', 'first'), th('Item group'), ...wcols.map(w => th(w, 'n')), th('Receipts', 'n'), th('Total', 'n tot')); head.replaceChildren(hr);
+      const trs = items.map(o => { const tr = el('tr'); tr.append(el('td', 'item', o.item), el('td', 'm', o.group), ...wcols.map(w => { const v = o.w.get(w); return el('td', 'n' + (v ? '' : ' z'), v ? fmt.kg(v) : '·'); }), el('td', 'n m', fmt.int(o.n)), el('td', 'n tot', fmt.kg(o.tot))); return tr; });
+      const tt = el('tr', 'total'); tt.append(el('td', 'item b', 'Total · ' + items.length + ' items'), el('td'), ...wcols.map(w => el('td', 'n', fmt.kg(view.filter(r => r.wh === w).reduce((a, r) => a + r.qty, 0)))), el('td', 'n', fmt.int(view.length)), el('td', 'n tot', fmt.kg(tot)));
+      body.replaceChildren(...trs, tt);
+    }
+    $('#trFoot').textContent = `${items.length} item${items.length === 1 ? '' : 's'} · ${S.trDay ? fmt.date(S.trDay) : days.length + ' dispatch days in ' + fmt.monthLabel(S.month)}${S.trWh !== 'All' ? ' · ' + S.trWh : ''}${S.trGroup !== 'All' ? ' · ' + S.trGroup : ''}`;
+  }
+  function exportTrend() {
+    if (typeof XLSX === 'undefined') { toast('The Excel tool needs an internet connection. Check it and press Refresh.'); return; }
+    const doc = currentDoc(); if (!doc) return;
+    const q = S.trQ.trim().toLowerCase();
+    const sel = trData(doc).filter(r => (S.trWh === 'All' || r.wh === S.trWh) && (S.trGroup === 'All' || r.group === S.trGroup) && (!q || r.item.toLowerCase().includes(q)) && (!S.trDay || r.date === S.trDay));
+    if (!sel.length) { toast('Nothing to download for these filters.'); return; }
+    const days = [...new Set(sel.map(r => r.date))].sort();
+    const by = new Map(); sel.forEach(r => { if (!by.has(r.item)) by.set(r.item, { 'Item': r.item, 'Item group': r.group }); const o = by.get(r.item); const k = fmt.date(r.date); o[k] = (o[k] || 0) + r.qty; });
+    const rows = [...by.values()].map(o => { let t = 0; days.forEach(d => { const k = fmt.date(d); if (o[k]) { o[k] = Math.round(o[k]); t += o[k]; } }); o['Total (kg)'] = t; return o; }).sort((a, b) => b['Total (kg)'] - a['Total (kg)']);
+    const det = sel.slice().sort((a, b) => a.date.localeCompare(b.date) || a.item.localeCompare(b.item)).map(r => ({ 'Date': r.date, 'Item': r.item, 'Item group': r.group, 'Warehouse': r.wh, 'Voucher #': r.vno, 'Qty (kg)': Math.round(r.qty * 100) / 100 }));
+    const wb = XLSX.utils.book_new();
+    const ws1 = XLSX.utils.json_to_sheet(rows, { header: ['Item', 'Item group', ...days.map(fmt.date), 'Total (kg)'] }); ws1['!cols'] = [{ wch: 60 }, { wch: 16 }, ...days.map(() => ({ wch: 11 })), { wch: 11 }];
+    XLSX.utils.book_append_sheet(wb, ws1, 'Daily trend');
+    const ws2 = XLSX.utils.json_to_sheet(det); ws2['!cols'] = [11, 60, 16, 12, 15, 10].map(w => ({ wch: w })); XLSX.utils.book_append_sheet(wb, ws2, 'Receipts');
+    const name = `RPC_Daily_Trend_${S.trDay || doc.key}${S.trWh !== 'All' ? '_' + S.trWh.replace(/\W+/g, '_') : ''}.xlsx`;
+    try { XLSX.writeFile(wb, name); toast('Excel downloaded: ' + name); } catch (err) { toast('Could not create the Excel file: ' + err.message); }
+  }
+
   function setView(v) {
-    S.view = v === 'mr' ? 'mr' : 'proj';
+    S.view = v === 'mr' || v === 'trend' ? v : 'proj';
     document.body.classList.toggle('v-mr', S.view === 'mr');
-    $('#pageTitle').innerHTML = S.view === 'mr' ? 'MR <em>pendency</em>' : 'Projection vs <em>sent to RPC</em>';
-    document.title = S.view === 'mr' ? 'MR Pendency · RPC Tracker' : 'RPC Projection Tracker';
+    document.body.classList.toggle('v-tr', S.view === 'trend');
+    $('#pageTitle').innerHTML = S.view === 'mr' ? 'MR <em>pendency</em>' : S.view === 'trend' ? 'Daily <em>trend</em>' : 'Projection vs <em>sent to RPC</em>';
+    document.title = S.view === 'mr' ? 'MR Pendency · RPC Tracker' : S.view === 'trend' ? 'Daily Trend · RPC Tracker' : 'RPC Projection Tracker';
     $$('.views button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.v === S.view)));
-    try { history.replaceState(null, '', S.view === 'mr' ? '#mr' : location.pathname + location.search); } catch (_) {}
+    try { history.replaceState(null, '', S.view === 'mr' ? '#mr' : S.view === 'trend' ? '#trend' : location.pathname + location.search); } catch (_) {}
   }
 
   /* ---------------- drawer ---------------- */
@@ -1279,6 +1437,7 @@ td .tag.bad { background: rgba(236,106,92,.14); color: var(--red); } td .tag.ex 
   /* ---------------- export ---------------- */
   $('#btnExport').addEventListener('click', async () => {
     if (S.view === 'mr') { exportMR(); return; }
+    if (S.view === 'trend') { exportTrend(); return; }
     const doc = currentDoc(); if (!doc) return;
     if (typeof XLSX === 'undefined') { toast('The Excel tool needs an internet connection. Check it and press Refresh.'); return; }
     const items = build(doc).filter(i => S.group === 'All' || i.group === S.group);
@@ -1657,7 +1816,14 @@ td .tag.bad { background: rgba(236,106,92,.14); color: var(--red); } td .tag.ex 
   $('#mdAll').addEventListener('change', e => { S.mrAll = e.target.checked; renderMrDrawer(); });
   $('#scrim').addEventListener('click', closeMrDrawer);
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && S.mrOpen != null) closeMrDrawer(); });
-  setView(location.hash === '#mr' ? 'mr' : 'proj');
+  setView(location.hash === '#mr' ? 'mr' : location.hash === '#trend' ? 'trend' : 'proj');
+  $('#trMonth').addEventListener('change', e => { S.month = e.target.value; S.trDay = null; render(); });
+  $('#trGroup').addEventListener('change', e => { S.trGroup = e.target.value; renderTrend(); });
+  $('#trSearch').addEventListener('input', e => { S.trQ = e.target.value; renderTrend(); });
+  $('#trWh').addEventListener('click', e => { const b = e.target.closest('button[data-w]'); if (b) { S.trWh = b.dataset.w; renderTrend(); } });
+  $('#trDays').addEventListener('click', e => { const b = e.target.closest('button.day'); if (b) { S.trDay = b.dataset.d || null; renderTrend(); } });
+  $('#trHead').addEventListener('click', e => { const h = e.target.closest('th[data-d]'); if (h) { S.trDay = h.dataset.d; renderTrend(); $('#trDays').scrollIntoView({ behavior: 'smooth', block: 'center' }); } });
+  $('#trReset').addEventListener('click', () => { S.trDay = null; S.trWh = 'All'; S.trGroup = 'All'; S.trQ = ''; $('#trSearch').value = ''; renderTrend(); });
   render(); showLocalNote();
   requestAnimationFrame(finishLoader);
   sync(false);
