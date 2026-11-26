@@ -289,6 +289,12 @@ body:not(.v-tr) .tv { display: none !important; }
 .trstats b { font-family: var(--display); font-size: 17px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; margin-right: 4px; }
 .trstats b.em { color: #7fdcb6; } .trstats b.gd { color: var(--gold-2); }
 .trstats i { font-style: normal; color: var(--line-2); }
+.zoom { display: inline-flex; align-items: center; gap: 2px; padding: 3px; background: var(--bg); border: 1px solid var(--line-2); border-radius: 999px; }
+.zoom button { border: 0; background: transparent; color: var(--text); width: 30px; height: 28px; border-radius: 999px; cursor: pointer; font: 700 16px var(--body); }
+.zoom button:hover { background: var(--panel-2); }
+.zoom button.fit { width: auto; padding: 0 12px; font-size: 12px; color: var(--gold-2); }
+.zoom span { min-width: 44px; text-align: center; font-size: 12px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+#trTable th.pdy, #trTable td.pdy { border-right: 1px solid var(--line-2); }
 .daypill { align-self: end; border: 0; background: var(--gold); color: #1b1503; padding: 8px 14px; border-radius: 999px; font: 700 12.5px var(--body); cursor: pointer; }
 @media (max-width: 1100px) { .kpis.trk { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 760px) { .kpis.trk { grid-template-columns: repeat(2, 1fr); } }
@@ -469,6 +475,14 @@ td .tag.bad { background: rgba(236,106,92,.14); color: var(--red); } td .tag.ex 
       </div>
       <div class="tf" style="min-width:220px"><label for="trSearch">Search item</label><input id="trSearch" type="search" placeholder="Chia, cashew, khalas…" autocomplete="off"></div>
       <button type="button" class="daypill" id="trDayPill" hidden title="Back to all days"></button>
+      <div class="tf"><label>Zoom</label>
+        <div class="zoom" role="group" aria-label="Table zoom">
+          <button type="button" id="trZoomOut" title="Zoom out" aria-label="Zoom out">−</button>
+          <span id="trZoomV">100%</span>
+          <button type="button" id="trZoomIn" title="Zoom in" aria-label="Zoom in">+</button>
+          <button type="button" id="trZoomFit" class="fit" title="Fit the whole month on screen">Fit month</button>
+        </div>
+      </div>
       <button type="button" class="btn" id="trReset" style="margin-left:auto;padding:9px 14px" title="All days, all warehouses, all groups">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2.5 8a5.5 5.5 0 1 0 1.6-3.9M2.5 2.5v3h3"/></svg>Reset</button>
     </div>
@@ -1047,7 +1061,7 @@ td .tag.bad { background: rgba(236,106,92,.14); color: var(--red); } td .tag.ex 
     const proj = doc.projection || [], whs = doc.warehouses || [];
     const out = [];
     (doc.receipts || []).forEach(r => { const p = proj[r[1]]; if (!p) return; const q = +r[2] || 0; if (q <= 0) return;
-      out.push({ date: r[0], item: p[0], group: p[1] || 'Other', qty: q, wh: whCat(whs[r[8]] || 'RPC Indore - Raw Material Stores'), vno: r[5] }); });
+      out.push({ date: r[0], item: p[0], group: p[1] || 'Other', pend: p[9] == null ? null : +p[9] || 0, qty: q, wh: whCat(whs[r[8]] || 'RPC Indore - Raw Material Stores'), vno: r[5] }); });
     return out;
   }
   function renderTrend() {
@@ -1067,7 +1081,7 @@ td .tag.bad { background: rgba(236,106,92,.14); color: var(--red); } td .tag.ex 
     const sel = inWh.filter(r => (S.trGroup === 'All' || r.group === S.trGroup) && (!q || r.item.toLowerCase().includes(q) || r.group.toLowerCase().includes(q)));
     // days with a dispatch only
     const dayTot = new Map(); sel.forEach(r => dayTot.set(r.date, (dayTot.get(r.date) || 0) + r.qty));
-    const days = [...dayTot.keys()].sort();
+    const days = [...dayTot.keys()].sort().reverse();
     if (S.trDay && !dayTot.has(S.trDay)) S.trDay = null;
     // KPIs
     const view = S.trDay ? sel.filter(r => r.date === S.trDay) : sel;
@@ -1083,44 +1097,58 @@ td .tag.bad { background: rgba(236,106,92,.14); color: var(--red); } td .tag.ex 
          st(fmt.kg(tot / days.length), null, 'kg avg per day'), sep(), st(dayLbl(top).d, 'gd', 'busiest · ' + fmt.kg(dayTot.get(top)) + ' kg'), sep(), st(fmt.int(itemSet.size), null, 'items')]) : []));
     // table
     const head = $('#trHead'), body = $('#trBody');
-    const by = new Map(); view.forEach(r => { if (!by.has(r.item)) by.set(r.item, { item: r.item, group: r.group, tot: 0, d: new Map(), w: new Map(), n: 0 }); const o = by.get(r.item); o.tot += r.qty; o.n++; o.d.set(r.date, (o.d.get(r.date) || 0) + r.qty); o.w.set(r.wh, (o.w.get(r.wh) || 0) + r.qty); });
+    const by = new Map(); view.forEach(r => { if (!by.has(r.item)) by.set(r.item, { item: r.item, group: r.group, pend: r.pend, tot: 0, d: new Map(), w: new Map(), n: 0 }); const o = by.get(r.item); o.tot += r.qty; o.n++; o.d.set(r.date, (o.d.get(r.date) || 0) + r.qty); o.w.set(r.wh, (o.w.get(r.wh) || 0) + r.qty); });
     const items = [...by.values()].sort((a, b) => b.tot - a.tot || a.item.localeCompare(b.item));
     const th = (txt, cls) => { const h = el('th', cls); h.append(el('span', null, txt)); return h; };
     if (!doc || !sel.length) { head.replaceChildren(); body.replaceChildren(emptyRow(3, doc ? 'Nothing was sent to RPC for these filters.' : 'No data yet.')); $('#trFoot').textContent = ''; return; }
     if (!S.trDay) {
       $('#trIdx').textContent = 'Daily trend · Item × day'; $('#trH').textContent = 'Quantity sent by day';
       $('#trNote').textContent = 'All quantities in kg · Only days with a dispatch are shown · Click a date heading to see only that day';
-      const hr = el('tr'); hr.append(th('Item', 'first'));
+      const pc = o => el('td', 'n pdy', o.pend == null ? '–' : fmt.kg(o.pend)); const pendTot = items.reduce((a, o) => a + (o.pend || 0), 0);
+      const hr = el('tr'); hr.append(th('Item', 'first'), th('Pendency', 'n pdy'));
       days.forEach(d => { const h = th(dayLbl(d).d, 'n dc'); h.dataset.d = d; h.title = dayLbl(d).w + ', ' + fmt.date(d) + ' · click to see only this day'; hr.append(h); });
       hr.append(th('Total', 'n tot')); head.replaceChildren(hr);
-      const trs = items.map(o => { const tr = el('tr'); const td = el('td', 'item', o.item); td.title = o.group; tr.append(td);
+      const trs = items.map(o => { const tr = el('tr'); const td = el('td', 'item', o.item); td.title = o.group; tr.append(td, pc(o));
         days.forEach(d => { const v = o.d.get(d); tr.append(el('td', 'n' + (v ? '' : ' z'), v ? fmt.kg(v) : '·')); }); tr.append(el('td', 'n tot', fmt.kg(o.tot))); return tr; });
-      const tt = el('tr', 'total'); tt.append(el('td', 'item b', 'Total · ' + items.length + ' items')); days.forEach(d => tt.append(el('td', 'n', fmt.kg(dayTot.get(d))))); tt.append(el('td', 'n tot', fmt.kg(tot)));
+      const tt = el('tr', 'total'); tt.append(el('td', 'item b', 'Total · ' + items.length + ' items'), el('td', 'n pdy', fmt.kg(pendTot))); days.forEach(d => tt.append(el('td', 'n', fmt.kg(dayTot.get(d))))); tt.append(el('td', 'n tot', fmt.kg(tot)));
       body.replaceChildren(...trs, tt);
     } else {
       const L = dayLbl(S.trDay);
       $('#trIdx').textContent = 'Daily trend · ' + L.w + ', ' + fmt.date(S.trDay); $('#trH').textContent = 'Sent on ' + L.d;
       $('#trNote').textContent = 'All quantities in kg · Click the date button above to go back to all days';
       const wcols = (S.trWh === 'All' ? whs : [S.trWh]).filter(w => view.some(r => r.wh === w));
-      const hr = el('tr'); hr.append(th('Item', 'first'), th('Item group'), ...wcols.map(w => th(w, 'n')), th('Receipts', 'n'), th('Total', 'n tot')); head.replaceChildren(hr);
-      const trs = items.map(o => { const tr = el('tr'); tr.append(el('td', 'item', o.item), el('td', 'm', o.group), ...wcols.map(w => { const v = o.w.get(w); return el('td', 'n' + (v ? '' : ' z'), v ? fmt.kg(v) : '·'); }), el('td', 'n m', fmt.int(o.n)), el('td', 'n tot', fmt.kg(o.tot))); return tr; });
-      const tt = el('tr', 'total'); tt.append(el('td', 'item b', 'Total · ' + items.length + ' items'), el('td'), ...wcols.map(w => el('td', 'n', fmt.kg(view.filter(r => r.wh === w).reduce((a, r) => a + r.qty, 0)))), el('td', 'n', fmt.int(view.length)), el('td', 'n tot', fmt.kg(tot)));
+      const pendTot = items.reduce((a, o) => a + (o.pend || 0), 0);
+      const hr = el('tr'); hr.append(th('Item', 'first'), th('Item group'), th('Pendency', 'n pdy'), ...wcols.map(w => th(w, 'n')), th('Receipts', 'n'), th('Total', 'n tot')); head.replaceChildren(hr);
+      const trs = items.map(o => { const tr = el('tr'); tr.append(el('td', 'item', o.item), el('td', 'm', o.group), el('td', 'n pdy', o.pend == null ? '–' : fmt.kg(o.pend)), ...wcols.map(w => { const v = o.w.get(w); return el('td', 'n' + (v ? '' : ' z'), v ? fmt.kg(v) : '·'); }), el('td', 'n m', fmt.int(o.n)), el('td', 'n tot', fmt.kg(o.tot))); return tr; });
+      const tt = el('tr', 'total'); tt.append(el('td', 'item b', 'Total · ' + items.length + ' items'), el('td'), el('td', 'n pdy', fmt.kg(pendTot)), ...wcols.map(w => el('td', 'n', fmt.kg(view.filter(r => r.wh === w).reduce((a, r) => a + r.qty, 0)))), el('td', 'n', fmt.int(view.length)), el('td', 'n tot', fmt.kg(tot)));
       body.replaceChildren(...trs, tt);
     }
     $('#trFoot').textContent = `${items.length} item${items.length === 1 ? '' : 's'} · ${S.trDay ? fmt.date(S.trDay) : days.length + ' dispatch days in ' + fmt.monthLabel(S.month)}${S.trWh !== 'All' ? ' · ' + S.trWh : ''}${S.trGroup !== 'All' ? ' · ' + S.trGroup : ''}`;
   }
+  const ZOOMS = [0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.15, 1.3];
+  function applyZoom() {
+    const z = S.trZoom || 1; const tb = $('#trTable'); tb.style.zoom = z;
+    $('#trZoomV').textContent = Math.round(z * 100) + '%';
+    $('#trSec .scroll').style.maxHeight = Math.round(660 / Math.min(z, 1)) + 'px';
+    try { localStorage.setItem('rpc_trZoom', String(z)); } catch (_) {}
+  }
+  function stepZoom(dir) { const z = S.trZoom || 1; let i = ZOOMS.findIndex(v => v >= z - 0.001); if (i < 0) i = ZOOMS.length - 1;
+    if (ZOOMS[i] > z + 0.001 && dir < 0) i--; else i += dir; S.trZoom = ZOOMS[Math.max(0, Math.min(ZOOMS.length - 1, i))]; applyZoom(); }
+  function fitZoom() { const tb = $('#trTable'), box = $('#trSec .scroll'); tb.style.zoom = 1; const need = tb.scrollWidth, have = box.clientWidth - 2;
+    S.trZoom = Math.max(0.45, Math.min(1, Math.floor(have / need * 100) / 100)); applyZoom(); }
+
   function exportTrend() {
     if (typeof XLSX === 'undefined') { toast('The Excel tool needs an internet connection. Check it and press Refresh.'); return; }
     const doc = currentDoc(); if (!doc) return;
     const q = S.trQ.trim().toLowerCase();
     const sel = trData(doc).filter(r => (S.trWh === 'All' || r.wh === S.trWh) && (S.trGroup === 'All' || r.group === S.trGroup) && (!q || r.item.toLowerCase().includes(q)) && (!S.trDay || r.date === S.trDay));
     if (!sel.length) { toast('Nothing to download for these filters.'); return; }
-    const days = [...new Set(sel.map(r => r.date))].sort();
-    const by = new Map(); sel.forEach(r => { if (!by.has(r.item)) by.set(r.item, { 'Item': r.item, 'Item group': r.group }); const o = by.get(r.item); const k = fmt.date(r.date); o[k] = (o[k] || 0) + r.qty; });
+    const days = [...new Set(sel.map(r => r.date))].sort().reverse();
+    const by = new Map(); sel.forEach(r => { if (!by.has(r.item)) by.set(r.item, { 'Item': r.item, 'Item group': r.group, 'Pendency (kg)': r.pend == null ? null : Math.round(r.pend) }); const o = by.get(r.item); const k = fmt.date(r.date); o[k] = (o[k] || 0) + r.qty; });
     const rows = [...by.values()].map(o => { let t = 0; days.forEach(d => { const k = fmt.date(d); if (o[k]) { o[k] = Math.round(o[k]); t += o[k]; } }); o['Total (kg)'] = t; return o; }).sort((a, b) => b['Total (kg)'] - a['Total (kg)']);
     const det = sel.slice().sort((a, b) => a.date.localeCompare(b.date) || a.item.localeCompare(b.item)).map(r => ({ 'Date': r.date, 'Item': r.item, 'Item group': r.group, 'Warehouse': r.wh, 'Voucher #': r.vno, 'Qty (kg)': Math.round(r.qty * 100) / 100 }));
     const wb = XLSX.utils.book_new();
-    const ws1 = XLSX.utils.json_to_sheet(rows, { header: ['Item', 'Item group', ...days.map(fmt.date), 'Total (kg)'] }); ws1['!cols'] = [{ wch: 60 }, { wch: 16 }, ...days.map(() => ({ wch: 11 })), { wch: 11 }];
+    const ws1 = XLSX.utils.json_to_sheet(rows, { header: ['Item', 'Item group', 'Pendency (kg)', ...days.map(fmt.date), 'Total (kg)'] }); ws1['!cols'] = [{ wch: 60 }, { wch: 16 }, { wch: 13 }, ...days.map(() => ({ wch: 11 })), { wch: 11 }];
     XLSX.utils.book_append_sheet(wb, ws1, 'Daily trend');
     const ws2 = XLSX.utils.json_to_sheet(det); ws2['!cols'] = [11, 60, 16, 12, 15, 10].map(w => ({ wch: w })); XLSX.utils.book_append_sheet(wb, ws2, 'Receipts');
     const name = `RPC_Daily_Trend_${S.trDay || doc.key}${S.trWh !== 'All' ? '_' + S.trWh.replace(/\W+/g, '_') : ''}.xlsx`;
@@ -1813,6 +1841,11 @@ td .tag.bad { background: rgba(236,106,92,.14); color: var(--red); } td .tag.ex 
   setView(location.hash === '#mr' ? 'mr' : location.hash === '#trend' ? 'trend' : 'proj');
   $('#trGroups').addEventListener('click', e => { const b = e.target.closest('button[data-g]'); if (b) { S.trGroup = b.dataset.g; renderTrend(); } });
   $('#trDayPill').addEventListener('click', () => { S.trDay = null; renderTrend(); });
+  $('#trZoomIn').addEventListener('click', () => stepZoom(1));
+  $('#trZoomOut').addEventListener('click', () => stepZoom(-1));
+  $('#trZoomFit').addEventListener('click', fitZoom);
+  try { S.trZoom = +localStorage.getItem('rpc_trZoom') || 1; } catch (_) { S.trZoom = 1; }
+  applyZoom();
   $('#trSearch').addEventListener('input', e => { S.trQ = e.target.value; renderTrend(); });
   $('#trWh').addEventListener('click', e => { const b = e.target.closest('button[data-w]'); if (b) { S.trWh = b.dataset.w; renderTrend(); } });
   $('#trHead').addEventListener('click', e => { const h = e.target.closest('th[data-d]'); if (h) { S.trDay = h.dataset.d; renderTrend(); } });
