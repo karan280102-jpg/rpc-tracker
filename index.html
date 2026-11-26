@@ -976,7 +976,7 @@ td .tag.bad { background: rgba(236,106,92,.14); color: var(--red); } td .tag.ex 
     if (c.item < 0 || c.no < 0 || c.pend < 0) return null;
     const rows = [];
     aoa.slice(1).forEach(r => {
-      const item = String(r[c.item] || '').trim(), no = String(r[c.no] || '').trim(); if (!item || !no) return;
+      const item = String(r[c.item] || '').trim(), no = String(r[c.no] || '').trim(); if (!item || !no || ignored(item)) return;
       const g = c.g >= 0 ? String(r[c.g] || '').trim() : ''; if (MR_SKIP.test(g)) return;
       let mk = null; const mo = c.mon >= 0 ? monthOf(r[c.mon]) : null; if (mo) mk = `${mo[1]}-${String(mo[0]).padStart(2, '0')}`;
       const d = c.date >= 0 ? mrDate(r[c.date], mk) : null; if (!mk && d) mk = d.slice(0, 7);
@@ -1277,6 +1277,9 @@ td .tag.bad { background: rgba(236,106,92,.14); color: var(--red); } td .tag.ex 
     return null;
   }
   const num = v => typeof v === 'number' ? v : (v == null || v === '' ? 0 : (+String(v).replace(/[,\s₹]/g, '') || 0));
+  // Items left out of the whole dashboard (projection, RPC receipts, daily trend, MR)
+  const IGNORE_ITEMS = ['Premium AA Pumpkin Seeds Farmley Carton Box 15 KG'];
+  const ignored = name => { const k = norm(name); return !!k && IGNORE_ITEMS.some(x => norm(x) === k); };
   function parseWorkbook(buf, fileName) {
     const wb = buf && buf.SheetNames ? buf : XLSX.read(buf, { type: 'array', cellDates: false });
     let projSheet = null, projRows = null, ledgers = [], nonUse = new Map(), nonUseSheet = null;
@@ -1304,7 +1307,7 @@ td .tag.bad { background: rgba(236,106,92,.14); color: var(--red); } td .tag.ex 
     const proj = [];
     const seenP = new Set();
     for (const r of projRows) {
-      const item = String(r[cItem] ?? '').trim(); if (!item) continue;
+      const item = String(r[cItem] ?? '').trim(); if (!item || ignored(item)) continue;
       const k = norm(item); if (seenP.has(k)) continue; seenP.add(k);
       proj.push({ item, k, group: cPGroup && r[cPGroup] ? String(r[cPGroup]).trim() : '', req: num(r[cReq]), inhand: cHand ? num(r[cHand]) : 0, pend: cPend ? num(r[cPend]) : null });
     }
@@ -1320,7 +1323,7 @@ td .tag.bad { background: rgba(236,106,92,.14); color: var(--red); } td .tag.ex 
     const recs = [], names = new Set(), monthCount = new Map();
     for (const r of src.rows) {
       if (c.wh && !/rpc/i.test(r[c.wh] || '')) continue;
-      const k = norm(r[c.item]); if (!k) continue;
+      const k = norm(r[c.item]); if (!k || ignored(r[c.item])) continue;
       names.add(k);
       const q = num(r[c.inq]); if (q <= 0) continue;
       let d = toISO(r[c.date]);
